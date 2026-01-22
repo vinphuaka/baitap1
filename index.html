@@ -1,29 +1,121 @@
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name=" viewport" content="width=device-width, initial-scale=0.1" />
-    <title>web demo</title>
-    <link rel="stylesheet" href="./style.css" />
-  </head>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Điểm Cá Nhân</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 4px; flex: 1; }
+        button { padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .btn-delete { background-color: #dc3545; padding: 5px 10px; font-size: 12px; }
+        .btn-delete:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
 
-  <body>
-    <div class="banner">
-      <div class="about-sign-in">
-        <a href="#" class="about red">About us</a>
-        <a href="#" class="sign-in green">Sign in</a>
-      </div>
-      <div class="logo"></div>
-      <div class="content-center"></div>
-      <div class="text">
-        <span
-          >Lorem Ipsum is simply dummy text of the printing and typesetting
-          industry</span
-        >
-      </div>
-      <div class="btn-start-now">
-        <button>Start now</button>
-      </div>
+<div class="container">
+    <h2>Quản Lý Điểm Cá Nhân</h2>
+    
+    <div class="input-group">
+        <input type="text" id="subjectName" placeholder="Tên môn học...">
+        <input type="number" id="subjectScore" placeholder="Điểm số..." step="0.1">
+        <button id="addBtn">Thêm</button>
     </div>
-  </body>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Môn học</th>
+                <th>Điểm</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody id="gradeTableBody">
+            </tbody>
+    </table>
+</div>
+
+<script type="module">
+    // Import Firebase SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Cấu hình của bạn
+    const firebaseConfig = {
+        apiKey: "AIzaSyCaItJ2I4zzVrc8sEO2J17gUhTIMA8abbk",
+        authDomain: "phuvinh-b1920.firebaseapp.com",
+        projectId: "phuvinh-b1920",
+        storageBucket: "phuvinh-b1920.firebasestorage.app",
+        messagingSenderId: "717894186708",
+        appId: "1:717894186708:web:68bc4a4c846a3bc3b2ad41",
+        measurementId: "G-8WQXB7QRH5"
+    };
+
+    // Khởi tạo Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const gradesCol = collection(db, 'grades');
+
+    // DOM Elements
+    const subjectInput = document.getElementById('subjectName');
+    const scoreInput = document.getElementById('subjectScore');
+    const addBtn = document.getElementById('addBtn');
+    const tableBody = document.getElementById('gradeTableBody');
+
+    // Hàm thêm điểm
+    addBtn.addEventListener('click', async () => {
+        const name = subjectInput.value;
+        const score = scoreInput.value;
+
+        if (name && score) {
+            try {
+                await addDoc(gradesCol, {
+                    name: name,
+                    score: parseFloat(score),
+                    createdAt: Date.now()
+                });
+                subjectInput.value = '';
+                scoreInput.value = '';
+            } catch (e) {
+                console.error("Lỗi khi thêm: ", e);
+            }
+        } else {
+            alert("Vui lòng nhập đầy đủ thông tin!");
+        }
+    });
+
+    // Lắng nghe dữ liệu thay đổi theo thời gian thực (Realtime)
+    onSnapshot(gradesCol, (snapshot) => {
+        tableBody.innerHTML = '';
+        snapshot.forEach((docData) => {
+            const data = docData.data();
+            const row = `
+                <tr>
+                    <td>${data.name}</td>
+                    <td>${data.score}</td>
+                    <td><button class="btn-delete" onclick="deleteGrade('${docData.id}')">Xóa</button></td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+    });
+
+    // Hàm xóa điểm (Gắn vào window để gọi từ HTML)
+    window.deleteGrade = async (id) => {
+        if(confirm("Bạn có chắc muốn xóa môn này?")) {
+            await deleteDoc(doc(db, "grades", id));
+        }
+    }
+
+</script>
+</body>
 </html>
