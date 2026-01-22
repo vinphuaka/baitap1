@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Quỹ Lớp</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #e9ecef; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #007bff; }
+        .nav-link { display: block; text-align: center; margin-bottom: 20px; text-decoration: none; color: #666; font-weight: bold; }
+        .nav-link:hover { color: #007bff; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 4px; flex: 1; min-width: 150px; }
+        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .total-box { margin-top: 20px; padding: 15px; background: #d4edda; border-radius: 4px; font-weight: bold; font-size: 1.2em; text-align: right; }
+        .btn-delete { background-color: #dc3545; padding: 5px 10px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="nav-link">← Quay lại Quản Lý Điểm</a>
+    <h2>Quản Lý Quỹ Lớp</h2>
+    
+    <div class="input-group">
+        <input type="text" id="desc" placeholder="Nội dung thu/chi...">
+        <input type="number" id="amount" placeholder="Số tiền (VNĐ)...">
+        <button id="addFundBtn">Thêm Giao Dịch</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nội dung</th>
+                <th>Số tiền</th>
+                <th>Xóa</th>
+            </tr>
+        </thead>
+        <tbody id="fundTableBody"></tbody>
+    </table>
+
+    <div class="total-box" id="totalAmount">Số dư hiện tại: 0 VNĐ</div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCaItJ2I4zzVrc8sEO2J17gUhTIMA8abbk",
+        authDomain: "phuvinh-b1920.firebaseapp.com",
+        projectId: "phuvinh-b1920",
+        storageBucket: "phuvinh-b1920.firebasestorage.app",
+        messagingSenderId: "717894186708",
+        appId: "1:717894186708:web:68bc4a4c846a3bc3b2ad41",
+        measurementId: "G-8WQXB7QRH5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const fundCol = collection(db, 'class_fund');
+
+    const descInput = document.getElementById('desc');
+    const amountInput = document.getElementById('amount');
+    const addFundBtn = document.getElementById('addFundBtn');
+    const tableBody = document.getElementById('fundTableBody');
+    const totalDisplay = document.getElementById('totalAmount');
+
+    addFundBtn.addEventListener('click', async () => {
+        const desc = descInput.value;
+        const amount = amountInput.value;
+        if (desc && amount) {
+            await addDoc(fundCol, {
+                description: desc,
+                amount: parseFloat(amount),
+                date: Date.now()
+            });
+            descInput.value = ''; amountInput.value = '';
+        }
+    });
+
+    onSnapshot(fundCol, (snapshot) => {
+        tableBody.innerHTML = '';
+        let total = 0;
+        snapshot.forEach((docData) => {
+            const data = docData.data();
+            total += data.amount;
+            const row = `
+                <tr>
+                    <td>${data.description}</td>
+                    <td style="color: ${data.amount >= 0 ? 'green' : 'red'}">${data.amount.toLocaleString()} VNĐ</td>
+                    <td><button class="btn-delete" onclick="deleteFund('${docData.id}')">Xóa</button></td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+        totalDisplay.innerText = `Số dư hiện tại: ${total.toLocaleString()} VNĐ`;
+    });
+
+    window.deleteFund = async (id) => {
+        if(confirm("Xóa giao dịch này?")) await deleteDoc(doc(db, "class_fund", id));
+    }
+</script>
+</body>
+</html>
